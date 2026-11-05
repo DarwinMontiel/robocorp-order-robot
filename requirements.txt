@@ -1,2 +1,4 @@
-robocorp
-rpaframework
+# Para ejecutar fuera de RCC (pip). Versiones alineadas con conda.yaml.
+robocorp==3.0.0
+robocorp-browser==2.3.5
+rpaframework==31.0.0
