@@ -1,72 +1,104 @@
-# Template: Python - Minimal
+<div align="center">
 
-This template leverages the new [Python framework](https://github.com/robocorp/robocorp), the [libraries](https://github.com/robocorp/robocorp/blob/master/docs/README.md#python-libraries) from to same project as well.
+# Robot de pedidos · Robocorp
 
-The template provides you with the basic structure of a Python project: logging out of the box and controlling your tasks without fiddling with the base Python stuff. The environment contains the most used libraries, so you do not have to start thinking about those right away. 
+**Bot RPA en Python que procesa pedidos en un aplicativo web: descarga el lote del día, llena el
+formulario por cada fila, reintenta los envíos fallidos, genera un recibo PDF con la imagen del
+producto y entrega todo en un ZIP.** Proyecto de la certificación *Robocorp Automation
+Developer – Python (Level I)*.
 
-👉 Other templates are available as well via our tooling and on our [Portal](https://robocorp.com/portal/tag/template)
+[![CI](https://github.com/DarwinMontiel/robocorp-order-robot/actions/workflows/ci.yml/badge.svg)](https://github.com/DarwinMontiel/robocorp-order-robot/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
+![Robocorp](https://img.shields.io/badge/Robocorp-tasks%20%2B%20browser-00A39E)
+![RPA Framework](https://img.shields.io/badge/RPA%20Framework-HTTP%20·%20PDF%20·%20Archive-2E7D32)
+![Playwright](https://img.shields.io/badge/Playwright-Chromium-2EAD33?logo=playwright&logoColor=white)
 
-## Running
+</div>
 
-#### VS Code
-1. Get [Robocorp Code](https://robocorp.com/docs/developer-tools/visual-studio-code/extension-features) -extension for VS Code.
-1. You'll get an easy-to-use side panel and powerful command-palette commands for running, debugging, code completion, docs, etc.
+> **English summary** — Robocorp (now Sema4.ai) RPA bot that downloads a daily CSV of orders,
+> fills a web form for each one through a Page Object, retries the site's intentionally flaky
+> submit button, renders each receipt to PDF with the robot preview embedded, and zips all
+> receipts. A failed order never stops the batch: evidence is captured and processing continues.
 
-#### Command line
+---
 
-1. [Get RCC](https://github.com/robocorp/rcc?tab=readme-ov-file#getting-started)
-1. Use the command: `rcc run`
+## Flujo
 
-## Results
+```mermaid
+flowchart LR
+    A[Descargar orders.csv] --> B[Validar filas<br/>Order.from_row]
+    B --> C{Por cada pedido}
+    C --> D[Cerrar aviso] --> E[Llenar formulario] --> F[Vista previa]
+    F --> G[Enviar<br/>hasta 5 intentos]
+    G -- recibo visible --> H[Recibo HTML → PDF] --> I[Captura del robot<br/>incrustada en el PDF] --> J[Pedir otro]
+    G -- falla --> K[Evidencia en output/errors<br/>y continuar]
+    J --> C
+    K --> C
+    C -- fin --> L[ZIP de recibos]
+```
 
-🚀 After running the bot, check out the `log.html` under the `output` -folder.
+El sitio de práctica (*RobotSpareBin Industries*) rechaza aleatoriamente algunos envíos: el robot
+lo trata como un **error de sistema** y reintenta hasta que aparece el recibo. Una fila con datos
+inválidos es un **error de negocio** y se informa sin reintentar.
 
-## Dependencies
+## Ejecutar
 
-We strongly recommend getting familiar with adding your dependencies in [conda.yaml](conda.yaml) to control your Python dependencies and the whole Python environment for your automation.
+Con la extensión de Robocorp / Sema4.ai para VS Code: abrir la carpeta y ejecutar la tarea
+`Run Task`. O con [RCC](https://github.com/robocorp/rcc) desde la terminal:
 
-<details>
-  <summary>🙋‍♂️ "Why not just pip install...?"</summary>
+```bash
+rcc run          # crea el entorno de conda.yaml y ejecuta tasks.py
+```
 
-Think of [conda.yaml](conda.yaml) as an equivalent of the requirements.txt, but much better. 👩‍💻 With `conda.yaml`, you are not just controlling your PyPI dependencies; you control the complete Python environment, which makes things repeatable and easy.
+Resultados en `output/`:
 
-👉 You will probably need to run your code on another machine quite soon, so by using `conda.yaml`:
-- You can avoid `Works on my machine` -cases
-- You do not need to manage Python installations on all the machines
-- You can control exactly which version of Python your automation will run on 
-  - You'll also control the pip version to avoid dep. resolution changes
-- No need for venv, pyenv, ... tooling and knowledge sharing inside your team.
-- Define dependencies in conda.yaml, let our tooling do the heavy lifting.
-- You get all the content of [conda-forge](https://prefix.dev/channels/conda-forge) without any extra tooling
+| Archivo | Contenido |
+|---|---|
+| `output/receipts/receipt_<n>.pdf` | Recibo de cada pedido con la imagen del robot |
+| `output/receipts.zip` | Todos los recibos (entregable final) |
+| `output/screenshots/` | Capturas de la vista previa de cada robot |
+| `output/errors/` | Evidencia de pedidos que fallaron tras los reintentos |
+| `output/log.html` | Log de ejecución de Robocorp |
 
-> Dive deeper with [these](https://github.com/robocorp/rcc/blob/master/docs/recipes.md#what-is-in-condayaml) resources.
+## Estructura
 
-</details>
-<br/>
+```
+tasks.py              # tarea @task: orquesta el lote y el manejo de fallas
+robot/
+├── config.py         # URLs, rutas de salida, selectores y política de reintentos
+├── orders.py         # descarga del CSV y validación de filas (lógica pura)
+├── order_page.py     # Page Object del formulario (toda la interacción con el navegador)
+├── receipts.py       # PDF, imagen incrustada y ZIP (RPA Framework)
+└── retry.py          # reintento genérico de pasos frágiles (lógica pura)
+tests/                # pruebas de la lógica pura (sin navegador ni RPA Framework)
+conda.yaml            # entorno reproducible (Python 3.12, rpaframework, robocorp)
+robot.yaml            # definición de la tarea para RCC / Control Room
+```
 
-> The full power of [rpaframework](https://robocorp.com/docs/python/rpa-framework) -libraries is also available on Python as a backup while we implement the new Python libraries.
+**Decisiones de diseño**
 
-## What now?
+- **Page Object**: los selectores viven en un solo lugar (`config.Selectors`); si el sitio cambia,
+  se corrige ahí y no en todo el flujo.
+- **Lógica pura separada**: validar pedidos y reintentar no dependen del navegador, por eso se
+  prueban en CI en milisegundos sin instalar RPA Framework.
+- **Resiliencia por pedido**: un pedido que falla deja evidencia y el lote continúa; al final la
+  tarea informa cuántos fallaron (así se puede reprocesar solo esos).
+- **Logs sin datos sensibles**: los datos de cada pedido no se vuelcan al log
+  (`log.suppress_variables`).
 
-🚀 Now, go get'em
+## Pruebas
 
-Start writing Python and remember that the AI/LLM's out there are getting really good and creating Python code specifically.
+```bash
+pip install pytest ruff
+pytest          # validación de filas, rutas de salida y política de reintentos
+ruff check .
+```
 
-👉 Try out [Robocorp ReMark 💬](https://chat.robocorp.com)
+## Autor
 
-For more information, do not forget to check out the following:
-- [Robocorp Documentation -site](https://robocorp.com/docs)
-- [Portal for more examples](https://robocorp.com/portal)
-- Follow our main [robocorp -repository](https://github.com/robocorp/robocorp) as it is the main location where we developed the libraries and the framework.
+**Darwin Montiel Mora** — Desarrollador RPA & Backend · Certificado *Robocorp Automation
+Developer – Python* y *SS&C Blue Prism Developer*.
+[LinkedIn](https://www.linkedin.com/in/darwin-montiel-mora-925216206) · [GitHub](https://github.com/DarwinMontiel)
 
-# 🤖 Robot Orders - Robocorp
-
-Este robot descarga órdenes de robots, llena formularios en [RobotSpareBin Industries](https://robotsparebinindustries.com/#/robot-order), 
-genera recibos en PDF con captura de pantalla del robot y comprime todos los recibos en un archivo ZIP.
-
-## 🚀 Cómo ejecutar
-
-1. Clona este repositorio:
-   ```bash
-   git clone https://github.com/TU_USUARIO/robot-orders.git
-   cd robot-orders
+Para una plataforma de bots en producción (colas RabbitMQ, reintentos, monitoreo de bots),
+ver [rpa-orchestrator](https://github.com/DarwinMontiel/rpa-orchestrator).
