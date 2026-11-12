@@ -8,16 +8,29 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
-    name: Lint · Pruebas de la lógica del robot
+    name: Lint · Tipado · Pruebas de la lógica del robot
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - run: pip install pytest ruff
-      - run: ruff check .
-      - run: ruff format --check .
-      - run: pytest
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Instalar herramientas
+        run: pip install -r requirements-dev.txt
+      - name: Lint
+        run: ruff check .
+      - name: Formato
+        run: ruff format --check .
+      - name: Tipado
+        run: mypy
+      - name: Pruebas
+        run: pytest

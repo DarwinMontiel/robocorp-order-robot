@@ -1,5 +1,5 @@
 # Configuración de herramientas de desarrollo. El entorno de ejecución del robot lo define
-# conda.yaml (Robocorp RCC); las pruebas de la lógica pura no necesitan RPA Framework.
+# conda.yaml (Robocorp RCC); las pruebas de la lógica no necesitan RPA Framework ni navegador.
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
@@ -12,3 +12,17 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "N", "RUF", "PT"]
 ignore = ["E501", "RUF001", "RUF002", "RUF003"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["robot", "tests", "tasks.py"]
+
+[[tool.mypy.overrides]]
+# Robocorp y RPA Framework no publican tipos; en CI ni siquiera se instalan.
+module = ["robocorp", "robocorp.*", "RPA", "RPA.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tasks"]
+disallow_untyped_decorators = false
