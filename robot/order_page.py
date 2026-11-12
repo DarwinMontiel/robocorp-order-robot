@@ -76,9 +76,24 @@ class OrderPage:
         self.page.screenshot(path=str(path), full_page=True)
         return path
 
+    def capture_evidence(self, path: Path) -> Path | None:
+        """Captura de un pedido fallido; si el navegador tampoco responde, no tumba el lote."""
+        try:
+            return self.screenshot_page(path)
+        except Exception:
+            return None
+
     def order_another(self) -> None:
         self.page.click(Selectors.ORDER_ANOTHER)
 
-    def reset(self) -> None:
-        """Vuelve a un formulario limpio después de un pedido fallido."""
-        self.open()
+    def reset(self) -> bool:
+        """Vuelve a un formulario limpio después de un pedido fallido.
+
+        Devuelve ``False`` si el sitio no cargó: el siguiente pedido lo intentará de nuevo y, si
+        sigue caído, quedará como fallido con su propia evidencia, sin detener el lote.
+        """
+        try:
+            self.open()
+        except Exception:
+            return False
+        return True

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, cast
 
 import pytest
@@ -84,3 +85,20 @@ def test_submit_gives_up_after_the_configured_attempts() -> None:
     with pytest.raises(StepFailedError, match="enviar pedido: sin éxito tras 5 intentos"):
         submit(fake)
     assert fake.clicks.count(Selectors.ORDER) == 5
+
+
+class BrokenPage:
+    """Navegador que ya no responde: ni capturas ni recarga."""
+
+    def screenshot(self, path: str, full_page: bool) -> None:
+        raise PlaywrightTimeoutError("Timeout 30000ms exceeded.")
+
+    def goto(self, url: str) -> None:
+        raise PlaywrightTimeoutError("Timeout 30000ms exceeded.")
+
+
+def test_recovering_from_a_failed_order_never_aborts_the_batch(tmp_path: Path) -> None:
+    page = OrderPage(cast(Any, BrokenPage()))
+
+    assert page.capture_evidence(tmp_path / "errores" / "pedido_2.png") is None
+    assert page.reset() is False

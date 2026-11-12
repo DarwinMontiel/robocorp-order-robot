@@ -23,8 +23,10 @@ def describe_failure(error: Exception) -> str:
     Un error inesperado se resume solo con su tipo, porque su mensaje podría traer valores del
     formulario; para diagnosticarlo está la captura de pantalla en ``output/errores``.
     """
-    if isinstance(error, (StepFailedError, PlaywrightTimeoutError)):
+    if isinstance(error, StepFailedError):
         return str(error).splitlines()[0]
+    if isinstance(error, PlaywrightTimeoutError):
+        return "el navegador agotó el tiempo de espera"
     return f"{type(error).__name__}: error de sistema inesperado"
 
 

@@ -49,7 +49,7 @@ def test_a_clean_shift_says_so() -> None:
 
 def test_failure_reasons_are_short_and_do_not_echo_unknown_messages() -> None:
     timeout = PlaywrightTimeoutError("Timeout 30000ms exceeded.\nCall log:\n  - waiting for #order")
-    assert describe_failure(timeout) == "Timeout 30000ms exceeded."
+    assert describe_failure(timeout) == "el navegador agotó el tiempo de espera"
     assert describe_failure(StepFailedError("enviar pedido: sin éxito tras 5 intentos")) == (
         "enviar pedido: sin éxito tras 5 intentos"
     )
