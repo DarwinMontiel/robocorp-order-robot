@@ -1,0 +1,16 @@
+Robot de pedidos · Robocorp
+Copyright 2025-2026 Darwin Montiel Mora
+
+Este proyecto parte de la plantilla oficial de Robocorp para robots en Python
+(robot.yaml, conda.yaml y la estructura inicial de tasks.py), distribuida bajo la
+Licencia Apache, versión 2.0. Esa atribución se conserva.
+
+Cambios sobre la plantilla, hechos por Darwin Montiel Mora:
+- Separación en Page Object, validación de pedidos, recibos, reintentos y reporte.
+- Validación fila por fila: las filas inválidas se apartan sin detener el lote.
+- Espera explícita del recibo y protección contra envíos duplicados.
+- Limpieza de la salida por ejecución, ZIP solo con los recibos del día y reporte de turno.
+- Pruebas automatizadas, tipado estricto e integración continua.
+
+El sitio RobotSpareBin Industries y su CSV de pedidos son material de práctica
+de Robocorp; este repositorio no los redistribuye.
