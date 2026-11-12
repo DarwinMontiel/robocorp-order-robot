@@ -1,1 +1,4 @@
-"""Robot de pedidos de RobotSpareBin Industries (certificación Robocorp · Nivel I)."""
+"""Robot de pedidos de RobotSpareBin Industries.
+
+Proyecto de la certificación Robocorp Automation Developer – Python (niveles I a III).
+"""

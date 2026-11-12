@@ -6,7 +6,9 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from robot.config import ORDER_URL, SUBMIT_ATTEMPTS, Selectors
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+from robot.config import ORDER_URL, RECEIPT_WAIT_MS, SUBMIT_ATTEMPTS, Selectors
 from robot.orders import Order
 from robot.retry import retry_until
 
@@ -15,8 +17,9 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class OrderPage:
-    def __init__(self, page: Page) -> None:
+    def __init__(self, page: Page, receipt_wait_ms: int = RECEIPT_WAIT_MS) -> None:
         self.page = page
+        self.receipt_wait_ms = receipt_wait_ms
 
     def open(self) -> None:
         self.page.goto(ORDER_URL)
@@ -38,12 +41,27 @@ class OrderPage:
     def submit(self, on_retry: Callable[[int], None] | None = None) -> int:
         """Envía el pedido; el servidor de práctica falla aleatoriamente, así que se reintenta."""
         return retry_until(
-            action=lambda: self.page.click(Selectors.ORDER),
-            succeeded=lambda: self.page.is_visible(Selectors.RECEIPT),
+            action=self._click_order,
+            succeeded=self.receipt_appeared,
             attempts=SUBMIT_ATTEMPTS,
             description="enviar pedido",
             on_retry=on_retry,
         )
+
+    def _click_order(self) -> None:
+        # Si el recibo llegó tarde, el pedido ya se envió: no se vuelve a hacer clic.
+        if not self.page.is_visible(Selectors.RECEIPT):
+            self.page.click(Selectors.ORDER)
+
+    def receipt_appeared(self) -> bool:
+        """Espera de forma explícita al recibo; ``is_visible`` responde sin esperar."""
+        try:
+            self.page.locator(Selectors.RECEIPT).wait_for(
+                state="visible", timeout=self.receipt_wait_ms
+            )
+        except PlaywrightTimeoutError:
+            return False
+        return True
 
     def receipt_html(self) -> str:
         return self.page.locator(Selectors.RECEIPT).inner_html()

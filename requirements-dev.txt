@@ -1,0 +1,6 @@
+# Herramientas de desarrollo y CI. Playwright se instala solo como librería (sin navegadores):
+# las pruebas usan sus tipos y su TimeoutError con una página falsa.
+playwright==1.64.1
+pytest==9.2.0
+ruff==0.17.3
+mypy==2.4.1
