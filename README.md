@@ -98,6 +98,10 @@ Así se ve un reporte de turno con un pedido fallido y una fila apartada (datos 
 mismos que usan las pruebas):
 
 ```markdown
+# Reporte de turno · Robot de pedidos
+
+Inicio: 2026-01-05 07:00
+
 | Indicador | Valor |
 |---|---:|
 | Filas en el CSV | 5 |
@@ -107,9 +111,15 @@ mismos que usan las pruebas):
 | Apartados (error de negocio) | 1 |
 
 ## Fallidos: reprocesar
+
+| Pedido | Motivo | Evidencia |
+|---:|---|---|
 | 2 | enviar pedido: sin éxito tras 5 intentos | `output/errores/pedido_2.png` |
 
 ## Apartados: corregir en el origen
+
+| Línea | Motivo |
+|---:|---|
 | 6 | falta la columna «Legs» |
 ```
 
@@ -140,7 +150,10 @@ robot.yaml            # definición de la tarea para RCC / Control Room
 - **Entregables honestos**: el ZIP se arma con la lista de recibos de esta ejecución, no con
   lo que haya en la carpeta.
 - **Logs sin datos sensibles**: el log y el reporte nombran el pedido, la línea o la columna,
-  nunca la dirección ni los valores de la fila (`log.suppress_variables` en el procesamiento).
+  nunca la dirección ni los valores de la fila (`log.suppress_variables` envuelve todo el lote,
+  desde la lectura del CSV).
+- **Recuperación que no tumba el lote**: si tras un pedido fallido tampoco se puede tomar la
+  captura o recargar el formulario, el pedido queda registrado y se sigue con el siguiente.
 - **Lógica pura separada**: validar, reintentar y reportar no dependen del navegador, por eso se
   prueban en CI en segundos sin instalar RPA Framework ni Chromium.
 
@@ -167,8 +180,8 @@ bots que corren todos los días en una fintech de cartera y cobranzas:
 | Error de negocio: fila incompleta o fuera de catálogo | Obligación inexistente o datos incompletos: devolver al área, no reintentar |
 | Reporte de turno | Informe al coordinador: qué quedó registrado y qué hay que reprocesar |
 
-La misma separación entre error de sistema y de negocio es la base del REFramework de Blue Prism
-(también certificado) y de la plataforma de bots
+La misma separación entre excepción de sistema y excepción de negocio es la que aplico en Blue
+Prism (también certificado) y la base de la plataforma de bots
 [colmena-rpa](https://github.com/DarwinMontiel/colmena-rpa) (colas RabbitMQ, reintentos y
 monitoreo), cuyas colas vigila [torre-de-control](https://github.com/DarwinMontiel/torre-de-control)
 en tiempo real. Para automatización con lectura de documentos, ver

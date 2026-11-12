@@ -17,6 +17,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - El ZIP ya no incluye recibos de ejecuciones anteriores.
 - Los mensajes de filas inválidas ya no vuelcan los valores de la fila al log.
 - Una falla inesperada en un pedido ya no detiene el lote: queda como error de sistema.
+- Las filas del CSV ya no llegan al log de Robocorp durante la lectura del lote.
+- Si la captura de evidencia o la recarga del formulario fallan, el lote sigue.
 
 ### Agregado
 - Reporte de turno en `output/resumen.md`.
