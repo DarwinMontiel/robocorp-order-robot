@@ -2,7 +2,7 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
-## [Sin publicar]
+## [1.1.0] - 2026-11-13
 
 ### Cambiado
 - El repositorio pasa a llamarse `robot-pedidos-robocorp` (antes `robocorp-order-robot`).
